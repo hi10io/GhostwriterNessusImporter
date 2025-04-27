@@ -9,8 +9,8 @@ from lib.nessus import NessusFileParser
 from lib.settings import settings
 from lib.utils.banner import print_banner
 import sys
-
 import time
+
 
 def add_findings_to_gw(gw_findings):
 
@@ -36,6 +36,7 @@ def add_findings_to_gw(gw_findings):
                 f"Added finding: {finding.title}",
                 extra={"response": response},
             )
+
             time.sleep(5)
 
     except GraphQLError as e:
