@@ -1,5 +1,6 @@
 from lib.settings.cli import get_options
 from lib.types.namespace import Namespace
+from lib.utils.banner import print_banner
 from lib.utils.settings import parse_exclude_hosts
 from pathlib import Path
 
@@ -27,4 +28,8 @@ def load_settings():
     return options
 
 
+#print_banner()
+
+
+print(__name__)
 settings = load_settings()

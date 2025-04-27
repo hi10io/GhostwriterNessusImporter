@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from asyncio.exceptions import TimeoutError
 from gql.transport.exceptions import TransportServerError, TransportQueryError
 from graphql.error.graphql_error import GraphQLError
@@ -5,8 +7,10 @@ from lib.ghostwriter import GhostwriterClient
 from lib.logging import Logger
 from lib.nessus import NessusFileParser
 from lib.settings import settings
+from lib.utils.banner import print_banner
 import sys
 
+import time
 
 def add_findings_to_gw(gw_findings):
 
@@ -22,6 +26,7 @@ def add_findings_to_gw(gw_findings):
         )
 
         for finding in gw_findings:
+            #response = gw_client.authenticate()
             response = gw_client.execute(
                 finding.query,
                 variable_values=finding.variable_values,
@@ -31,6 +36,7 @@ def add_findings_to_gw(gw_findings):
                 f"Added finding: {finding.title}",
                 extra={"response": response},
             )
+            time.sleep(5)
 
     except GraphQLError as e:
         logger.error(f"GraphQL error: {e}")
@@ -49,6 +55,8 @@ def parse_nessus_reports():
 
 
 def main():
+
+    print_banner()
 
     if settings.debug.print_settings:
         print(settings)

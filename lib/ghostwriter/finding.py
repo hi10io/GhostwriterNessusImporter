@@ -1,10 +1,10 @@
 from gql import gql
-from lib.types.severity import Severity
 from lib.settings import settings
 
 from lib.types.finding_type import FindingType
+from lib.types.severity import Severity, SeverityData, from_cvss
 
-
+ 
 class GhostwriterFinding:
 
     def __init__(
@@ -30,7 +30,7 @@ class GhostwriterFinding:
 
         self.report_id = report_id
         self.finding_type = finding_type
-        self.severity = Severity.from_cvss(cvss_score, cvss_vector)
+        self.severity_data = from_cvss(cvss_score, cvss_vector, title)
         self.assigned_to_id = assigned_to_id
         self.references = references
         self.affected_entities = affected_entities
@@ -42,14 +42,21 @@ class GhostwriterFinding:
         self.title = title
         self.description = description
 
+    def get_cvss_info(self):
+        """Returns a formatted CVSS details string."""
+        return (
+            f"Severity: {self.severity_data.severity}, "
+            f"CVSS Score: {self.severity_data.cvss_score}, "
+            f"Vector: {self.severity_data.cvss_vector}"
+        )
+
     @property
     def query(self):
 
         return gql(
             """
-            mutation MyMutation ($added_as_blank: Boolean!, $affected_entities: String!, $cvss_score: float8!, $cvss_vector: String!, $description: String!, $mitigation: String!, $replication_steps: String!, $title: String!, $report_id: bigint!, $finding_type_id: bigint!, $severity_id: bigint!, $assigned_to_id: bigint!) {
+            mutation MyMutation ($affected_entities: String!, $cvss_score: float8!, $cvss_vector: String!, $description: String!, $mitigation: String!, $replication_steps: String!, $title: String!, $report_id: bigint!, $finding_type_id: bigint!, $severity_id: bigint!) {
                 insert_reportedFinding_one(object: {
-                    addedAsBlank: $added_as_blank,
                     affectedEntities: $affected_entities,
                     cvssScore: $cvss_score,
                     cvssVector: $cvss_vector,
@@ -60,7 +67,7 @@ class GhostwriterFinding:
                     reportId: $report_id,
                     findingTypeId: $finding_type_id,
                     severityId: $severity_id,
-                    assignedToId: $assigned_to_id
+                
                 }) {
                 id
                 }
@@ -73,14 +80,14 @@ class GhostwriterFinding:
         return {
             "added_as_blank": self.added_as_blank,
             "affected_entities": self.affected_entities,
-            "cvss_score": self.severity.cvss_score,
-            "cvss_vector": f"{self.severity.cvss_vector}",
+            "cvss_score": self.severity_data.cvss_score,
+            "cvss_vector": f"{self.severity_data.cvss_vector}",
             "description": f"{self.description}",
             "mitigation": f"{self.mitigation}",
             "replication_steps": f"{self.replication_steps}",
             "title": f"{self.title}",
             "report_id": int(self.report_id),
             "finding_type_id": self.finding_type.value,
-            "severity_id": int(self.severity.value),
+            "severity_id": int(self.severity_data.severity.value),
             "assigned_to_id": int(self.assigned_to_id),
         }
