@@ -5,6 +5,7 @@ from lib.types.namespace import Namespace
 from lib.utils.python import deep_update
 from tenable.nessus import Nessus
 from tenable.reports import NessusReportv2
+import re
 
 
 class NessusFileParser:
@@ -87,11 +88,36 @@ class NessusFileParser:
         return [NessusFinding.from_dict(val) for val in sorted_findings]
 
     def get_gw_findings(self):
-        return [f.to_ghostwriter_finding() for f in self.get_nessus_findings()]
+        findings_list = []  # Initialize an empty list
+        for f in self.get_nessus_findings():
+            obj = f.to_ghostwriter_finding()
+            findings_list.append(obj)
+        return findings_list
+
+        #return [f.to_ghostwriter_finding() for f in self.get_nessus_findings()]
+
 
     def read_findings(self):
 
         for entry in self.read_report_entries(ns=True):
+            if not hasattr(entry, 'plugin_output'):
+                entry.plugin_output = "No Output Specified"
+            if not hasattr(entry, 'cvss_base_score'): 
+                entry.cvss_base_score = float(0.0)
+
+            if not hasattr(entry, 'cvss_vector'): 
+                entry.cvss_vector = ""
+            
+            if hasattr(entry, 'cvss3_base_score'): 
+                cvss3vectorraw = entry.cvss3_vector
+                entry.cvss_vector = re.sub(r'CVSS:3\.0', 'CVSS:3.1', cvss3vectorraw)
+                if "3.0" in str(entry.cvss3_base_score):
+                    entry.cvss_base_score = float(3.1)  
+                else:
+                    entry.cvss_base_score = float(entry.cvss3_base_score)
+
+            
+            entry.cvss_base_score = float(entry.cvss_base_score) 
             self.findings[entry.pluginID] = deep_update(
                 self.findings.get(entry.pluginID, {}),
                 {
@@ -107,5 +133,6 @@ class NessusFileParser:
                     "severity": entry.risk_factor,
                 },
             )
+
 
         return self.findings

@@ -28,7 +28,8 @@ def load_settings():
     return options
 
 
-print_banner()
+#print_banner()
+
 
 
 print(__name__)
